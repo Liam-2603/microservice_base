@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CommentLike {
+  commentId String   @map("comment_id") @db.VarChar(36)
+  userId    String   @map("user_id") @db.VarChar(36)
+  createdAt DateTime @map("created_at") @db.Timestamp(3)
+
+  @@id([commentId, userId])
+  @@map("comment_likes")
+}
+
+model Comment {
+  id         String          @id @map("id") @db.VarChar(36)
+  userId     String          @map("user_id") @db.VarChar(36)
+  postId     String          @map("post_id") @db.VarChar(36)
+  parentId   String?         @map("parent_id") @db.VarChar(36)
+  content    String          @map("content") @db.Text
+  likedCount Int             @default(0) @map("liked_count")
+  replyCount Int             @default(0) @map("reply_count")
+  status     CommentStatus   @default(pending) @map("status")
+  createdAt  DateTime        @default(now()) @map("created_at") @db.Timestamp(3)
+  updatedAt  DateTime?       @default(now()) @map("updated_at") @db.Timestamp(3)
+
+  @@index([parentId], map: "parentIdIdx")
+  @@index([postId], map: "postIdIdx")
+  @@index([status], map: "statusIdx")
+  @@index([userId], map: "userIdIdx")
+  @@map("comments")
+}
+
+model Follower {
+  followerId  String   @map("follower_id") @db.VarChar(36)
+  followingId String   @map("following_id") @db.VarChar(36)
+  createdAt   DateTime @map("created_at") @db.Timestamp(3)
+
+  @@id([followingId, followerId])
+  @@index([followerId], map: "followerIdIdx")
+  @@map("followers")
+}
+
+model Notification {
+  id         String                @id @map("id") @db.VarChar(36)
+  receiverId String                @map("receiver_id") @db.VarChar(36)
+  actorId    String?               @map("actor_id") @db.VarChar(36)
+  content    String?               @map("content") @db.Text
+  action     NotificationAction    @default(liked) @map("action")
+  isSent     Boolean?              @map("is_sent")
+  isRead     Boolean?              @map("is_read")
+  createdAt  DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime              @default(now()) @map("updated_at") @db.Timestamp(0)
+
+  @@index([receiverId], map: "receiver_id")
+  @@map("notifications")
+}
+
+model PostLike {
+  postId    String   @map("post_id") @db.VarChar(36)
+  userId    String   @map("user_id") @db.VarChar(36)
+  createdAt DateTime @map("created_at") @db.Timestamp(3)
+
+  @@id([postId, userId])
+  @@index([userId], map: "userId")
+  @@map("post_likes")
+}
+
+model PostSave {
+  postId    String   @map("post_id") @db.VarChar(36)
+  userId    String   @map("user_id") @db.VarChar(36)
+  createdAt DateTime @map("created_at") @db.Timestamp(3)
+
+  @@id([postId, userId])
+  @@index([userId], map: "postSaveUserIdIdx")
+  @@map("post_saves")
+}
+
+model Post {
+  id           String      @id @map("id") @db.VarChar(36)
+  content      String      @map("content") @db.Text
+  image        String?     @map("image") @db.VarChar(255)
+  authorId     String      @map("author_id") @db.VarChar(36)
+  topicId      String      @map("topic_id") @db.VarChar(36)
+  isFeatured   Boolean?    @default(false) @map("is_featured")
+  commentCount Int?        @default(0) @map("comment_count") @db.Integer
+  likedCount   Int?        @default(0) @map("liked_count") @db.Integer
+  type         PostType?   @default(text) @map("type")
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt    DateTime    @default(now()) @map("updated_at") @db.Timestamp(0)
+
+  @@index([authorId], map: "authorIdIdx")
+  @@index([isFeatured], map: "isFeaturedIdx")
+  @@map("posts")
+}
+
+model Topic {
+  id        String   @id @map("id") @db.VarChar(36)
+  name      String   @map("name") @db.VarChar(100)
+  color     String   @map("color") @db.VarChar(10)
+  postCount Int?     @default(0) @map("post_count") @db.Integer
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamp(0)
+
+  @@map("topics")
+}
+
+model User {
+  id            String        @id @map("id") @db.VarChar(36)
+  cover         String?       @map("cover") @db.VarChar(255)
+  avatar        String?       @map("avatar") @db.VarChar(255)
+  username      String        @map("username") @db.VarChar(100)
+  firstName     String        @map("first_name") @db.VarChar(100)
+  lastName      String        @map("last_name") @db.VarChar(100)
+  password      String        @map("password") @db.VarChar(100)
+  salt          String        @map("salt") @db.VarChar(50)
+  role          UserRole      @default(user) @map("role")
+  bio           String?       @map("bio") @db.VarChar(255)
+  websiteUrl    String?       @map("website_url") @db.VarChar(255)
+  followerCount Int?          @default(0) @map("follower_count") @db.Integer
+  postCount     Int?          @default(0) @map("post_count") @db.Integer
+  status        UserStatus?   @default(active) @map("status")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime      @default(now()) @map("updated_at") @db.Timestamp(0)
+
+  @@index([role], map: "role")
+  @@index([status], map: "status")
+  @@map("users")
+}
+
+enum NotificationAction {
+  liked
+  followed
+  replied
+}
+
+enum CommentStatus {
+  pending
+  approved
+  rejected
+  deleted
+  spam
+}
+
+enum PostType {
+  text
+  media
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+enum UserStatus {
+  active
+  pending
+  inactive
+  banned
+  deleted
+}

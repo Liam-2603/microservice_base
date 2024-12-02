@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+  postgres:
+    image: bitnami/postgresql:latest
+    container_name: postgres-bento
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRESQL_USERNAME=200lab
+      - POSTGRESQL_PASSWORD=200lab_secret
+      - POSTGRESQL_DATABASE=bento-social
+    networks:
+      - social
+  redis:
+    image: redis:6.0
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-bento:/data
+    environment:
+      - REDIS_PASSWORD=200lab_redis
+    networks:
+      - social
+    command: /bin/sh -c 'redis-server --appendonly yes --requirepass $$REDIS_PASSWORD'
+
+networks:
+  social:
+
+volumes:
+  social_mysql:
+  redis-bento:
